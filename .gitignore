@@ -1,0 +1,16 @@
+# Ignore vendor (PHP composer packages)
+vendor/
+
+# Ignore environment or config files
+.env
+
+# Ignore system files
+.DS_Store
+Thumbs.db
+
+# Ignore IDE/editor settings
+.vscode/
+.idea/
+
+# Ignore node modules (if you ever use Node.js)
+node_modules/

@@ -1,0 +1,1593 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExpoMetrix - Interactive Stall Layout Generator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+      margin: 0;
+      font-family: "Inter", sans-serif;
+      background-color: #eff2f1;
+      color: #6a6a6a;
+      overflow-x: hidden;
+    }
+
+    a {
+      text-decoration: none;
+      transition: 0.3s all ease;
+      color: #2f2f2f;
+    }
+
+    a:hover {
+      text-decoration: none;
+    }
+
+    /* Dashboard Container */
+    .dashboard {
+      display: flex;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background-color: #3b5d50;
+      width: 250px;
+      flex-shrink: 0;
+      padding: 20px;
+      color: #fff;
+      position: relative;
+      transition: width 0.3s ease;
+    }
+
+    .sidebar:hover {
+      width: 300px;
+    }
+
+    .sidebar h2 {
+      margin: 0;
+      padding-bottom: 20px;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .menu {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .menu li {
+      margin-bottom: 15px;
+      overflow: hidden;
+    }
+
+    .menu li a {
+      display: block;
+      padding: 10px 15px;
+      border-radius: 5px;
+      font-weight: 500;
+      color: #ffffff;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+
+    .menu li a:hover {
+      background-color: #314d43;
+      transform: scale(1.05);
+    }
+
+    /* Generate Layout Button */
+    .generate-btn {
+      display: block;
+      text-align: center;
+      margin-top: 30px;
+      padding: 12px 20px;
+      border-radius: 30px;
+      background-color: #f9bf29;
+      color: #2f2f2f;
+      font-weight: 600;
+      transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .generate-btn:hover {
+      background-color: #f8b810;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Content Area */
+    .content {
+      flex-grow: 1;
+      background: #ffffff;
+      padding: 40px;
+      overflow-y: auto;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 1px solid #dce5e4;
+      background-color: #ffffff;
+    }
+
+    .header .logo {
+      font-size: 28px;
+      font-weight: 700;
+      color: #3b5d50;
+    }
+
+    .header nav a {
+      margin-left: 15px;
+      font-weight: 500;
+      color: #3b5d50;
+      transition: color 0.3s ease;
+    }
+
+    .header nav a:hover {
+      color: #314d43;
+    }
+
+    /* Animated Dashboard Cards */
+    .card-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .card {
+      flex: 1;
+      min-width: 250px;
+      padding: 20px;
+      border-radius: 10px;
+      transition: transform 0.3s ease;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      transform: translateY(-10px);
+    }
+
+    .card h3 {
+      margin-top: 0;
+      font-weight: 600;
+    }
+
+    /* Color variations for cards */
+    .card.upcoming {
+      background: #f9bf29;
+      color: #2f2f2f;
+    }
+
+    .card.active {
+      background: #3b5d50;
+      color: #ffffff;
+    }
+
+    .card.pending {
+      background: #eff2f1;
+      border: 2px solid #3b5d50;
+      color: #3b5d50;
+    }
+
+    .layout-container {
+            position: relative;
+            border: 2px solid #000;
+            margin: 20px auto;
+            background-color: #ADE8F4;
+            overflow: auto;
+        }
+
+        .stall {
+            position: absolute;
+            background-color: white;
+            border: 2px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .small-stall {
+            background-color: #E6F7FF;
+        }
+
+        .large-stall {
+            background-color: #FFFBEB;
+        }
+
+        .staff-space {
+            position: absolute;
+            background-color: #ADE8F4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .walking-space {
+            position: absolute;
+            background-color: #CCFF33;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .gate {
+            position: absolute;
+            background-color: #FF9999;
+            border: 2px solid #FF0000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #800000;
+        }
+
+        .modal-xl {
+            max-width: 90%;
+        }
+
+        .layout-controls {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        #scaleFactor {
+            width: 100%;
+        }
+
+        .scale-label {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .info-section {
+            background-color: #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0077B6;
+            margin-bottom: 10px;
+        }
+
+        .layout-container {
+            position: relative;
+            border: 2px solid #000;
+            margin: 20px auto;
+            background-color: #ADE8F4;
+            overflow: auto;
+        }
+
+        .stall {
+            position: absolute;
+            background-color: white;
+            border: 2px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: move;
+            overflow: hidden;
+            text-align: center;
+            user-select: none;
+            z-index: 10;
+        }
+
+        .stall.selected {
+            border: 2px dashed #FF5733;
+            box-shadow: 0 0 10px rgba(255, 87, 51, 0.5);
+            z-index: 20;
+        }
+
+        .stall-controls {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: none;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 0 0 0 5px;
+            z-index: 21;
+        }
+
+        .stall:hover .stall-controls {
+            display: flex;
+        }
+
+        .stall-controls button {
+            border: none;
+            background: none;
+            color: white;
+            font-size: 14px;
+            padding: 3px 5px;
+            cursor: pointer;
+        }
+
+        .gate {
+            position: absolute;
+            background-color: #FF9999;
+            border: 2px solid #FF0000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #800000;
+            cursor: move;
+            user-select: none;
+            z-index: 10;
+        }
+
+        .gate.selected {
+            border: 2px dashed #FF5733;
+            box-shadow: 0 0 10px rgba(255, 87, 51, 0.5);
+            z-index: 20;
+        }
+
+        .gate-controls {
+            position: absolute;
+            top: 0;
+            right: 0;
+            display: none;
+            background-color: rgba(0, 0, 0, 0.6);
+            border-radius: 0 0 0 5px;
+            z-index: 21;
+        }
+
+        .gate:hover .gate-controls {
+            display: flex;
+        }
+
+        .layout-controls {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        #scaleFactor {
+            width: 100%;
+        }
+
+        .scale-label {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .info-section {
+            background-color: #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0077B6;
+            margin-bottom: 10px;
+        }
+
+        .stall-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .stall-option {
+            border: 2px solid #0077B6;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: white;
+            transition: all 0.2s;
+        }
+
+        .stall-option:hover,
+        .stall-option.selected {
+            background-color: #0077B6;
+            color: white;
+        }
+
+        .grid-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .grid-line {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+
+        .grid-line.horizontal {
+            width: 100%;
+            height: 1px;
+        }
+
+        .grid-line.vertical {
+            height: 100%;
+            width: 1px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid mt-3">
+        <!-- <div class="row">
+            <div class="col-12 text-center mb-4">
+                <div class="logo">ExpoMetrix</div>
+                <h1>Interactive Exhibition Layout Generator</h1>
+                <p class="text-muted">Design your own custom exhibition layouts with drag and drop stalls</p>
+            </div>
+        </div> -->
+        <div class="dashboard">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar">
+              <h2>ExpoMatrix</h2>
+              <ul class="menu">
+                <li><a href="#overview">Dashboard Overview</a></li>
+                <li><a href="#projects">Projects</a></li>
+                <li><a href="#events">Events</a></li>
+                <li><a href="#tasks">Tasks</a></li>
+                <li><a href="#analytics">Analytics</a></li>
+                <li><a href="#settings">Settings</a></li>
+              </ul>
+              <!-- Link to the separate Generate Layout file -->
+              <a id="autoLayoutBtn" class="generate-btn" href="automatic_layout.html">Generate Automatic Layout</a>
+              <a class="generate-btn" href="customized_layout.html">Generate Cutsom Layout</a>
+            </aside>
+        
+            <!-- Main Content Area -->
+            <div class="content">
+              <!-- Header with logo and top navigation -->
+              <div class="header">
+                <div class="logo">Organizer Dashboard</div>
+                <nav>
+                  <a href="organizer_profile.php">Profile</a>
+                  <a href="#notifications">Notifications</a>
+                  <a href="logout.php">Logout</a>
+                </nav>
+              </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="layout-controls">
+                    <h4>Layout Settings</h4>
+                    <div class="mb-3">
+                        <label for="layoutWidth" class="form-label">Layout Width (meters)</label>
+                        <input type="number" class="form-control" id="layoutWidth" value="20" min="5" step="0.5">
+                    </div>
+                    <div class="mb-3">
+                        <label for="layoutHeight" class="form-label">Layout Height (meters)</label>
+                        <input type="number" class="form-control" id="layoutHeight" value="15" min="5" step="0.5">
+                    </div>
+                    <button id="generateLayout" class="btn btn-primary">Generate Layout</button>
+                </div>
+
+                <div class="layout-controls">
+                    <h4>Tools</h4>
+                    <div class="toolbar">
+                        <button id="addStallBtn" class="btn btn-outline-primary">
+                            <i class="fas fa-plus-square"></i> Add Stall
+                        </button>
+                        <button id="addGateBtn" class="btn btn-outline-danger">
+                            <i class="fas fa-door-open"></i> Add Gate
+                        </button>
+                        <button id="exportBtn" class="btn btn-outline-success">
+                            <i class="fas fa-file-export"></i> Export
+                        </button>
+                        <button id="importBtn" class="btn btn-outline-info">
+                            <i class="fas fa-file-import"></i> Import
+                        </button>
+                        <button id="saveLayoutBtn" class="btn btn-outline-success">
+                            <i class="fas fa-save"></i> Save Layout
+                        </button>
+                        <button id="clearLayoutBtn" class="btn btn-outline-secondary">
+                            <i class="fas fa-trash"></i> Clear All
+                        </button>
+                        <input type="file" id="importFile" accept=".json" style="display:none">
+
+
+                    </div>
+
+                    <div id="stallSizeSelector" class="stall-selector mb-3" style="display: none;">
+                        <div class="stall-option" data-size="1">1×1m</div>
+                        <div class="stall-option" data-size="2">2×2m</div>
+                        <div class="stall-option selected" data-size="3">3×3m</div>
+                        <div class="stall-option" data-size="4">4×4m</div>
+                        <div class="stall-option" data-size="5">5×5m</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="snapToGrid" checked>
+                            <label class="form-check-label" for="snapToGrid">Snap to Grid</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="showGrid" checked>
+                            <label class="form-check-label" for="showGrid">Show Grid</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layout-controls">
+                    <h4>Display Options</h4>
+                    <div class="mb-3">
+                        <label for="scaleFactor" class="form-label">Zoom Level</label>
+                        <input type="range" class="form-range" id="scaleFactor" min="25" max="100" value="50">
+                        <div class="d-flex justify-content-between scale-label">
+                            <span>25%</span>
+                            <span>50%</span>
+                            <span>75%</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showLabels" checked>
+                        <label class="form-check-label" for="showLabels">Show Stall Labels</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showDimensions" checked>
+                        <label class="form-check-label" for="showDimensions">Show Dimensions</label>
+                    </div>
+                </div>
+
+                <div class="layout-controls">
+                    <h4>Layout Statistics</h4>
+                    <p><strong>Total Area:</strong> <span id="totalArea">0</span> m² (<span id="totalAreaFt">0</span> sq
+                        ft)</p>
+                    <p><strong>Number of Stalls:</strong> <span id="stallCount">0</span></p>
+                    <p><strong>Total Stall Area:</strong> <span id="stallArea">0</span> m² (<span
+                            id="stallAreaFt">0</span> sq ft)</p>
+                    <p><strong>Space Efficiency:</strong> <span id="spaceEfficiency">0</span>%</p>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div id="layoutContainer" class="layout-container">
+                    <div id="gridLines" class="grid-lines"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stall Modal -->
+    <div class="modal fade" id="stallModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Stall</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="stallName" class="form-label">Stall Name</label>
+                        <input type="text" class="form-control" id="stallName" placeholder="Enter stall name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Stall Size</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="stallSize" id="size1" value="1">
+                            <label class="btn btn-outline-primary" for="size1">1×1</label>
+                            <input type="radio" class="btn-check" name="stallSize" id="size2" value="2">
+                            <label class="btn btn-outline-primary" for="size2">2×2</label>
+                            <input type="radio" class="btn-check" name="stallSize" id="size3" value="3" checked>
+                            <label class="btn btn-outline-primary" for="size3">3×3</label>
+                            <input type="radio" class="btn-check" name="stallSize" id="size4" value="4">
+                            <label class="btn btn-outline-primary" for="size4">4×4</label>
+                            <input type="radio" class="btn-check" name="stallSize" id="size5" value="5">
+                            <label class="btn btn-outline-primary" for="size5">5×5</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" id="deleteStall">Delete</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveStall">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gate Modal -->
+    <div class="modal fade" id="gateModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Gate</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="gateType" class="form-label">Gate Type</label>
+                        <select class="form-select" id="gateType">
+                            <option value="ENTRY">Entry</option>
+                            <option value="EXIT">Exit</option>
+                            <option value="ENTRY/EXIT">Entry/Exit</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="gateWidth" class="form-label">Gate Width (meters)</label>
+                        <input type="number" class="form-control" id="gateWidth" value="1.2" min="0.8" max="3"
+                            step="0.2">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" id="deleteGate">Delete</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveGate">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Constants
+        const METERS_TO_FEET = 10.764;
+        const GRID_SIZE = 0.2;
+
+        // DOM Elements
+        const layoutContainer = document.getElementById('layoutContainer');
+        const gridLines = document.getElementById('gridLines');
+        const layoutWidth = document.getElementById('layoutWidth');
+        const layoutHeight = document.getElementById('layoutHeight');
+        const generateButton = document.getElementById('generateLayout');
+        const scaleFactorInput = document.getElementById('scaleFactor');
+        const showLabelsCheckbox = document.getElementById('showLabels');
+        const showDimensionsCheckbox = document.getElementById('showDimensions');
+        const totalAreaSpan = document.getElementById('totalArea');
+        const totalAreaFtSpan = document.getElementById('totalAreaFt');
+        const stallCountSpan = document.getElementById('stallCount');
+        const stallAreaSpan = document.getElementById('stallArea');
+        const stallAreaFtSpan = document.getElementById('stallAreaFt');
+        const spaceEfficiencySpan = document.getElementById('spaceEfficiency');
+        const addStallBtn = document.getElementById('addStallBtn');
+        const addGateBtn = document.getElementById('addGateBtn');
+        const clearLayoutBtn = document.getElementById('clearLayoutBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const importBtn = document.getElementById('importBtn');
+        const importFile = document.getElementById('importFile');
+        const stallSizeSelector = document.getElementById('stallSizeSelector');
+        const stallOptions = document.querySelectorAll('.stall-option');
+        const snapToGridCheckbox = document.getElementById('snapToGrid');
+        const showGridCheckbox = document.getElementById('showGrid');
+
+        // Modal elements
+        const stallModal = new bootstrap.Modal(document.getElementById('stallModal'));
+        const stallNameInput = document.getElementById('stallName');
+        const stallSizeInputs = document.querySelectorAll('input[name="stallSize"]');
+        const saveStallButton = document.getElementById('saveStall');
+        const deleteStallButton = document.getElementById('deleteStall');
+
+        const gateModal = new bootstrap.Modal(document.getElementById('gateModal'));
+        const gateTypeInput = document.getElementById('gateType');
+        const gateWidthInput = document.getElementById('gateWidth');
+        const saveGateButton = document.getElementById('saveGate');
+        const deleteGateButton = document.getElementById('deleteGate');
+
+        // State variables
+        let pixelsPerMeter = 50;
+        let elements = { stalls: [], gates: [] };
+        let currentElement = null;
+        let isAddingStall = false;
+        let isAddingGate = false;
+        let selectedStallSize = 3;
+        let isDragging = false;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        const STALL_PRICES = {
+            1: 1000,
+            2: 2000,
+            3: 3000,
+            4: 4000,
+            5: 5000
+        };
+
+
+        // Initialize event listeners
+        function initEventListeners() {
+            generateButton.addEventListener('click', generateLayout);
+            scaleFactorInput.addEventListener('input', updateScale);
+            showLabelsCheckbox.addEventListener('change', updateDisplayOptions);
+            showDimensionsCheckbox.addEventListener('change', updateDisplayOptions);
+            saveStallButton.addEventListener('click', saveStallChanges);
+            deleteStallButton.addEventListener('click', deleteCurrentElement);
+            saveGateButton.addEventListener('click', saveGateChanges);
+            deleteGateButton.addEventListener('click', deleteCurrentElement);
+            addStallBtn.addEventListener('click', toggleAddStall);
+            addGateBtn.addEventListener('click', toggleAddGate);
+            clearLayoutBtn.addEventListener('click', clearLayout);
+            showGridCheckbox.addEventListener('change', updateGridVisibility);
+            exportBtn.addEventListener('click', exportLayout);
+            importBtn.addEventListener('click', () => importFile.click());
+            importFile.addEventListener('change', importLayout);
+
+            // Add event listeners to stall size options
+            stallOptions.forEach(option => {
+                option.addEventListener('click', function () {
+                    stallOptions.forEach(opt => opt.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedStallSize = parseInt(this.dataset.size);
+                });
+            });
+        }
+
+        function adjustPosition(element, existingElements) {
+    let shifted = false;
+    let newLeft = element.position.left + GRID_SIZE; // Try moving to the right
+    let newTop = element.position.top;
+
+    // Try moving the element to the right by one grid unit and check overlap
+    while (checkOverlap({ ...element, position: { left: newLeft, top: newTop, width: element.position.width, height: element.position.height } }, existingElements)) {
+        newLeft += GRID_SIZE; // Keep shifting to the right
+    }
+
+    // If shifting to the right doesn't work, try moving the element below
+    if (!shifted) {
+        newLeft = element.position.left;
+        newTop = element.position.top + GRID_SIZE;
+
+        while (checkOverlap({ ...element, position: { left: newLeft, top: newTop, width: element.position.width, height: element.position.height } }, existingElements)) {
+            newTop += GRID_SIZE; // Keep shifting down
+        }
+    }
+
+    // Apply the new position after the shift
+    element.position.left = newLeft;
+    element.position.top = newTop;
+
+    // Update the element's position in the DOM
+    const elementDom = document.getElementById(element.id);
+    if (elementDom) {
+        if (elementDom.classList.contains('stall')) {
+            updateStallPosition(elementDom, element.position);
+        } else if (elementDom.classList.contains('gate')) {
+            updateGatePosition(elementDom, element.position);
+        }
+    }
+}
+
+
+
+        function checkOverlap(newElement, existingElements) {
+    for (let element of existingElements) {
+        const existing = element.position;
+        const newPos = newElement.position;
+
+        // Check if the new element overlaps with the existing one
+        if (newPos.left < existing.left + existing.width &&
+            newPos.left + newPos.width > existing.left &&
+            newPos.top < existing.top + existing.height &&
+            newPos.top + newPos.height > existing.top) {
+            return true; // Overlap detected
+        }
+    }
+    return false; // No overlap
+}
+
+
+        // Delete element function
+        function deleteElement(elementId) {
+            elements.stalls = elements.stalls.filter(s => s.id !== elementId);
+            elements.gates = elements.gates.filter(g => g.id !== elementId);
+
+            const element = document.getElementById(elementId);
+            if (element) element.remove();
+
+            if (currentElement && currentElement.id === elementId) currentElement = null;
+            updateStatistics();
+        }
+
+        function generateLayout() {
+            const width = parseFloat(layoutWidth.value);
+            const height = parseFloat(layoutHeight.value);
+
+            if (isNaN(width) || isNaN(height) || width < 5 || height < 5) {
+                alert('Please enter valid dimensions (minimum width: 5m, minimum height: 5m)');
+                return;
+            }
+
+            layoutContainer.style.width = `${width * pixelsPerMeter}px`;
+            layoutContainer.style.height = `${height * pixelsPerMeter}px`;
+            createGridLines(width, height);
+            updateStatistics();
+            updateDisplayOptions();
+        }
+
+        function createGridLines(width, height) {
+            gridLines.innerHTML = '';
+
+            for (let y = 0; y <= height; y += GRID_SIZE) {
+                const line = document.createElement('div');
+                line.className = 'grid-line horizontal';
+                line.style.top = `${y * pixelsPerMeter}px`;
+                gridLines.appendChild(line);
+            }
+
+            for (let x = 0; x <= width; x += GRID_SIZE) {
+                const line = document.createElement('div');
+                line.className = 'grid-line vertical';
+                line.style.left = `${x * pixelsPerMeter}px`;
+                gridLines.appendChild(line);
+            }
+
+            updateGridVisibility();
+        }
+
+        function updateGridVisibility() {
+            gridLines.style.display = showGridCheckbox.checked ? 'block' : 'none';
+        }
+
+        function toggleAddStall() {
+            isAddingStall = !isAddingStall;
+            isAddingGate = false;
+
+            addStallBtn.classList.toggle('active', isAddingStall);
+            addGateBtn.classList.remove('active');
+
+            stallSizeSelector.style.display = isAddingStall ? 'flex' : 'none';
+            layoutContainer.style.cursor = isAddingStall ? 'crosshair' : 'default';
+
+            // Remove event listeners first to avoid duplicates
+            layoutContainer.removeEventListener('click', placeStall);
+            layoutContainer.removeEventListener('click', placeGate);
+
+            if (isAddingStall) {
+                layoutContainer.addEventListener('click', placeStall);
+            }
+        }
+
+        function toggleAddGate() {
+            isAddingGate = !isAddingGate;
+            isAddingStall = false;
+
+            addGateBtn.classList.toggle('active', isAddingGate);
+            addStallBtn.classList.remove('active');
+            stallSizeSelector.style.display = 'none';
+
+            layoutContainer.style.cursor = isAddingGate ? 'crosshair' : 'default';
+
+            // Remove event listeners first to avoid duplicates
+            layoutContainer.removeEventListener('click', placeStall);
+            layoutContainer.removeEventListener('click', placeGate);
+
+            if (isAddingGate) {
+                layoutContainer.addEventListener('click', placeGate);
+            }
+        }
+
+        function placeStall(event) {
+    // Prevent placement while dragging
+    if (isDragging) return;
+
+    const rect = layoutContainer.getBoundingClientRect();
+    let x = (event.clientX - rect.left) / pixelsPerMeter;
+    let y = (event.clientY - rect.top) / pixelsPerMeter;
+
+    if (snapToGridCheckbox.checked) {
+        x = Math.round(x / GRID_SIZE) * GRID_SIZE;
+        y = Math.round(y / GRID_SIZE) * GRID_SIZE;
+    }
+
+    // Create the new stall object
+    const stallData = {
+        id: `stall-${Date.now()}`,
+        size: selectedStallSize,
+        position: {
+            left: x - (selectedStallSize / 2),
+            top: y - (selectedStallSize / 2),
+            width: selectedStallSize,
+            height: selectedStallSize
+        }
+    };
+
+    // Check for overlap with existing stalls and gates
+    const allElements = elements.stalls.concat(elements.gates); // Get all existing elements
+    if (checkOverlap(stallData, allElements)) {
+        alert("The new stall cannot overlap with existing elements.");
+        return; // Stop if overlap is detected
+    }
+
+    // Proceed with placing the stall if no overlap
+    createStallElement(stallData);
+    elements.stalls.push(stallData);
+    updateStatistics();
+
+    // Disable adding mode after placement for better UX
+    toggleAddStall();
+}
+
+
+
+function placeGate(event) {
+    // Prevent placement while dragging
+    if (isDragging) return;
+
+    const rect = layoutContainer.getBoundingClientRect();
+    let x = (event.clientX - rect.left) / pixelsPerMeter;
+    let y = (event.clientY - rect.top) / pixelsPerMeter;
+
+    const gateWidth = 1.2;
+    const gateHeight = 0.4;
+
+    if (snapToGridCheckbox.checked) {
+        x = Math.round(x / GRID_SIZE) * GRID_SIZE;
+        y = Math.round(y / GRID_SIZE) * GRID_SIZE;
+    }
+
+    // Create the new gate object
+    const gateData = {
+        id: `gate-${Date.now()}`,
+        position: {
+            left: x - (gateWidth / 2),
+            top: y - (gateHeight / 2),
+            width: gateWidth,
+            height: gateHeight
+        }
+    };
+
+    // Check for overlap with existing stalls and gates
+    const allElements = elements.stalls.concat(elements.gates); // Get all existing elements
+    if (checkOverlap(gateData, allElements)) {
+        alert("The new gate cannot overlap with existing elements.");
+        return; // Stop if overlap is detected
+    }
+
+    // Proceed with placing the gate if no overlap
+    createGateElement(gateData);
+    elements.gates.push(gateData);
+    updateStatistics();
+
+    // Disable adding mode after placement for better UX
+    toggleAddGate();
+}
+
+
+
+        function createStallElement(stallData) {
+            const stall = document.createElement('div');
+            stall.className = 'stall';
+            stall.id = stallData.id;
+            updateStallPosition(stall, stallData.position);
+
+            const controls = document.createElement('div');
+            controls.className = 'stall-controls';
+
+            const editBtn = document.createElement('button');
+            editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+            editBtn.title = 'Edit Stall';
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openStallModal(stallData);
+            });
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+            deleteBtn.title = 'Delete Stall';
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteElement(stallData.id);
+            });
+
+            controls.appendChild(editBtn);
+            controls.appendChild(deleteBtn);
+            stall.appendChild(controls);
+
+            updateStallContent(stall, stallData);
+            makeElementDraggable(stall, stallData);
+
+            stall.addEventListener('click', (e) => {
+                // Prevent click events from propagating to layout container
+                e.stopPropagation();
+                selectElement(stallData.id);
+            });
+
+            layoutContainer.appendChild(stall);
+            return stall;
+        }
+
+        function createGateElement(gateData) {
+            const gate = document.createElement('div');
+            gate.className = 'gate';
+            gate.id = gateData.id;
+            updateGatePosition(gate, gateData.position);
+
+            const controls = document.createElement('div');
+            controls.className = 'gate-controls';
+
+            const editBtn = document.createElement('button');
+            editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+            editBtn.title = 'Edit Gate';
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openGateModal(gateData);
+            });
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+            deleteBtn.title = 'Delete Gate';
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteElement(gateData.id);
+            });
+
+            controls.appendChild(editBtn);
+            controls.appendChild(deleteBtn);
+            gate.appendChild(controls);
+
+            updateGateContent(gate, gateData);
+            makeElementDraggable(gate, gateData);
+
+            gate.addEventListener('click', (e) => {
+                // Prevent click events from propagating to layout container
+                e.stopPropagation();
+                selectElement(gateData.id);
+            });
+
+            layoutContainer.appendChild(gate);
+            return gate;
+        }
+
+        function makeElementDraggable(element, elementData) {
+            element.addEventListener('mousedown', function (e) {
+                if (e.target.closest('.stall-controls') || e.target.closest('.gate-controls')) return;
+
+                // Disable stall/gate placement modes when starting to drag
+                if (isAddingStall || isAddingGate) {
+                    isAddingStall = false;
+                    isAddingGate = false;
+                    addStallBtn.classList.remove('active');
+                    addGateBtn.classList.remove('active');
+                    stallSizeSelector.style.display = 'none';
+                    layoutContainer.style.cursor = 'default';
+
+                    // Remove event listeners for placing stalls/gates
+                    layoutContainer.removeEventListener('click', placeStall);
+                    layoutContainer.removeEventListener('click', placeGate);
+                }
+
+                isDragging = true;
+                currentElement = elementData;
+                selectElement(elementData.id);
+
+                const rect = element.getBoundingClientRect();
+                dragOffsetX = e.clientX - rect.left;
+                dragOffsetY = e.clientY - rect.top;
+
+                document.addEventListener('mousemove', elementDragMove);
+                document.addEventListener('mouseup', elementDragEnd);
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        }
+
+        function elementDragMove(e) {
+    if (!isDragging || !currentElement) return;
+
+    const rect = layoutContainer.getBoundingClientRect();
+    let left = (e.clientX - rect.left - dragOffsetX) / pixelsPerMeter;
+    let top = (e.clientY - rect.top - dragOffsetY) / pixelsPerMeter;
+
+    const width = parseFloat(layoutWidth.value);
+    const height = parseFloat(layoutHeight.value);
+    const elementWidth = currentElement.position.width;
+    const elementHeight = currentElement.position.height;
+
+    // Snap to grid if checked
+    if (snapToGridCheckbox.checked) {
+        left = Math.round(left / GRID_SIZE) * GRID_SIZE;
+        top = Math.round(top / GRID_SIZE) * GRID_SIZE;
+    }
+
+    // Ensure the element stays within the layout boundaries
+    left = Math.max(0, Math.min(width - elementWidth, left));
+    top = Math.max(0, Math.min(height - elementHeight, top));
+
+    // Update the position of the element
+    currentElement.position.left = left;
+    currentElement.position.top = top;
+
+    // Check for overlap with existing stalls and gates
+    const allElements = elements.stalls.concat(elements.gates); // Get all existing elements
+    let overlap = checkOverlap(currentElement, allElements);
+
+    if (overlap) {
+        // If overlap is detected, change cursor to "not-allowed"
+        layoutContainer.style.cursor = "not-allowed";
+
+        // Automatically adjust the position to the right or below the existing element
+        adjustPosition(currentElement, allElements);
+    } else {
+        // If no overlap, restore the cursor and proceed with updating the element position
+        layoutContainer.style.cursor = "move";
+    }
+
+    // Update the element's position in the DOM
+    const element = document.getElementById(currentElement.id);
+    if (element) {
+        if (element.classList.contains('stall')) {
+            updateStallPosition(element, currentElement.position); // Update position for stalls
+        } else if (element.classList.contains('gate')) {
+            updateGatePosition(element, currentElement.position); // Update position for gates
+        }
+    }
+}
+
+
+
+
+        function elementDragEnd() {
+            isDragging = false;
+            document.removeEventListener('mousemove', elementDragMove);
+            document.removeEventListener('mouseup', elementDragEnd);
+            updateStatistics();
+        }
+
+        function updateStallPosition(stallElement, position) {
+            stallElement.style.left = `${position.left * pixelsPerMeter}px`;
+            stallElement.style.top = `${position.top * pixelsPerMeter}px`;
+            stallElement.style.width = `${position.width * pixelsPerMeter}px`;
+            stallElement.style.height = `${position.height * pixelsPerMeter}px`;
+        }
+
+        function updateGatePosition(gateElement, position) {
+            gateElement.style.left = `${position.left * pixelsPerMeter}px`;
+            gateElement.style.top = `${position.top * pixelsPerMeter}px`;
+            gateElement.style.width = `${position.width * pixelsPerMeter}px`;
+            gateElement.style.height = `${position.height * pixelsPerMeter}px`;
+        }
+
+        function updateStallContent(stallElement, stallData) {
+            const displayName = showLabelsCheckbox.checked ? stallData.name : '';
+            const displayDimensions = showDimensionsCheckbox.checked ? `${stallData.size}×${stallData.size}m` : '';
+
+            stallElement.innerHTML = `
+                <div class="stall-controls">
+                    <button title="Edit Stall"><i class="fas fa-edit"></i></button>
+                    <button title="Delete Stall"><i class="fas fa-trash"></i></button>
+                </div>
+                <div>${displayName}</div>
+                <div class="text-muted small">${displayDimensions}</div>
+            `;
+
+            // Re-add event listeners to the control buttons
+            const editBtn = stallElement.querySelector('.stall-controls button:first-child');
+            const deleteBtn = stallElement.querySelector('.stall-controls button:last-child');
+
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openStallModal(stallData);
+            });
+
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteElement(stallData.id);
+            });
+        }
+
+        function updateGateContent(gateElement, gateData) {
+            gateElement.innerHTML = `
+                <div class="gate-controls">
+                    <button title="Edit Gate"><i class="fas fa-edit"></i></button>
+                    <button title="Delete Gate"><i class="fas fa-trash"></i></button>
+                </div>
+                <div>${gateData.type}</div>
+            `;
+
+            // Re-add event listeners to the control buttons
+            const editBtn = gateElement.querySelector('.gate-controls button:first-child');
+            const deleteBtn = gateElement.querySelector('.gate-controls button:last-child');
+
+            editBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openGateModal(gateData);
+            });
+
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                deleteElement(gateData.id);
+            });
+        }
+
+        function selectElement(elementId) {
+            // Remove selection from all elements
+            document.querySelectorAll('.stall, .gate').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // Add selection to target element
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.add('selected');
+
+                // Find and set current element data
+                const stallData = elements.stalls.find(s => s.id === elementId);
+                const gateData = elements.gates.find(g => g.id === elementId);
+                currentElement = stallData || gateData;
+            }
+        }
+
+        function openStallModal(stallData) {
+            stallNameInput.value = stallData.name;
+
+            // Set selected size radio button
+            stallSizeInputs.forEach(input => {
+                if (parseInt(input.value) === stallData.size) {
+                    input.checked = true;
+                }
+            });
+
+            currentElement = stallData;
+            stallModal.show();
+        }
+
+        function openGateModal(gateData) {
+            gateTypeInput.value = gateData.type || 'ENTRY';
+            gateWidthInput.value = gateData.position.width;
+            currentElement = gateData;
+            gateModal.show();
+        }
+
+        function saveStallChanges() {
+            if (!currentElement) return;
+
+            const size = parseInt([...stallSizeInputs].find(input => input.checked).value);
+
+            // Update stall data
+            currentElement.name = stallNameInput.value || `Stall ${elements.stalls.indexOf(currentElement) + 1}`;
+            currentElement.size = size;
+            currentElement.position.width = size;
+            currentElement.position.height = size;
+
+            // Update visual element
+            const stallElement = document.getElementById(currentElement.id);
+            if (stallElement) {
+                updateStallPosition(stallElement, currentElement.position);
+                updateStallContent(stallElement, currentElement);
+            }
+
+            stallModal.hide();
+            updateStatistics();
+        }
+
+        function saveGateChanges() {
+            if (!currentElement) return;
+
+            const width = parseFloat(gateWidthInput.value);
+
+            // Update gate data
+            currentElement.type = gateTypeInput.value;
+            currentElement.position.width = width;
+
+            // Update visual element
+            const gateElement = document.getElementById(currentElement.id);
+            if (gateElement) {
+                updateGatePosition(gateElement, currentElement.position);
+                updateGateContent(gateElement, currentElement);
+            }
+
+            gateModal.hide();
+            updateStatistics();
+        }
+
+        function deleteCurrentElement() {
+            if (!currentElement) return;
+            deleteElement(currentElement.id);
+            stallModal.hide();
+            gateModal.hide();
+        }
+
+        function updateScale() {
+            const scale = parseInt(scaleFactorInput.value);
+            pixelsPerMeter = scale;
+
+            // Update layout container dimensions
+            const width = parseFloat(layoutWidth.value);
+            const height = parseFloat(layoutHeight.value);
+            layoutContainer.style.width = `${width * pixelsPerMeter}px`;
+            layoutContainer.style.height = `${height * pixelsPerMeter}px`;
+
+            // Update stalls positions and sizes
+            elements.stalls.forEach(stallData => {
+                const stallElement = document.getElementById(stallData.id);
+                if (stallElement) {
+                    updateStallPosition(stallElement, stallData.position);
+                }
+            });
+
+            // Update gates positions and sizes
+            elements.gates.forEach(gateData => {
+                const gateElement = document.getElementById(gateData.id);
+                if (gateElement) {
+                    updateGatePosition(gateElement, gateData.position);
+                }
+            });
+
+            // Recreate grid lines with new scale
+            createGridLines(width, height);
+        }
+
+        function updateDisplayOptions() {
+            // Update stalls display options
+            elements.stalls.forEach(stallData => {
+                const stallElement = document.getElementById(stallData.id);
+                if (stallElement) {
+                    updateStallContent(stallElement, stallData);
+                }
+            });
+        }
+
+        function updateStatistics() {
+            const width = parseFloat(layoutWidth.value);
+            const height = parseFloat(layoutHeight.value);
+
+            const totalArea = width * height;
+            const totalAreaFt = totalArea * METERS_TO_FEET;
+
+            const stallTotalArea = elements.stalls.reduce((sum, stall) => sum + (stall.size * stall.size), 0);
+            const stallTotalAreaFt = stallTotalArea * METERS_TO_FEET;
+
+            const efficiency = totalArea > 0 ? (stallTotalArea / totalArea) * 100 : 0;
+
+            totalAreaSpan.textContent = totalArea.toFixed(2);
+            totalAreaFtSpan.textContent = totalAreaFt.toFixed(2);
+            stallCountSpan.textContent = elements.stalls.length;
+            stallAreaSpan.textContent = stallTotalArea.toFixed(2);
+            stallAreaFtSpan.textContent = stallTotalAreaFt.toFixed(2);
+            spaceEfficiencySpan.textContent = efficiency.toFixed(2);
+        }
+
+        function clearLayout() {
+            if (confirm('Are you sure you want to clear the entire layout?')) {
+                elements = { stalls: [], gates: [] };
+
+                // Remove all stalls and gates from DOM
+                document.querySelectorAll('.stall, .gate').forEach(el => el.remove());
+
+                currentElement = null;
+                updateStatistics();
+            }
+        }
+
+        function exportLayout() {
+            const layoutData = {
+                dimensions: {
+                    width: parseFloat(layoutWidth.value),
+                    height: parseFloat(layoutHeight.value)
+                },
+                elements: elements
+            };
+
+            const dataStr = JSON.stringify(layoutData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
+            const exportFileName = 'expo-layout-' + new Date().toISOString().slice(0, 10) + '.json';
+
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileName);
+            linkElement.click();
+        }
+
+        function importLayout(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const layoutData = JSON.parse(e.target.result);
+
+                    // Clear current layout
+                    elements = { stalls: [], gates: [] };
+                    document.querySelectorAll('.stall, .gate').forEach(el => el.remove());
+
+                    // Set dimensions
+                    layoutWidth.value = layoutData.dimensions.width;
+                    layoutHeight.value = layoutData.dimensions.height;
+                    generateLayout();
+
+                    // Create stalls
+                    if (layoutData.elements.stalls) {
+                        layoutData.elements.stalls.forEach(stallData => {
+                            createStallElement(stallData);
+                        });
+                    }
+
+                    // Create gates
+                    if (layoutData.elements.gates) {
+                        layoutData.elements.gates.forEach(gateData => {
+                            createGateElement(gateData);
+                        });
+                    }
+
+                    elements = layoutData.elements;
+                    updateStatistics();
+
+                } catch (error) {
+                    console.error('Error importing layout:', error);
+                    alert('Failed to import layout file. The file might be corrupted or in an invalid format.');
+                }
+
+                // Reset file input
+                event.target.value = '';
+            };
+            reader.readAsText(file);
+        }
+
+        document.getElementById('saveLayoutBtn').addEventListener('click', saveLayoutToDatabase);
+
+
+        function saveLayoutToDatabase() {
+            const width = parseFloat(layoutWidth.value);
+            const height = parseFloat(layoutHeight.value);
+
+            if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
+                alert('Invalid layout dimensions. Please check your values.');
+                return;
+            }
+
+            // Extract entry and exit gate counts
+            const entryPoints = elements.gates.filter(g => g.type === 'ENTRY' || g.type === 'ENTRY/EXIT').length;
+            const exitPoints = elements.gates.filter(g => g.type === 'EXIT' || g.type === 'ENTRY/EXIT').length;
+
+            // Prepare stall data to save
+            const stalls = elements.stalls.map((stall, index) => ({
+                size: stall.size,
+                stall_type: stall.name || `Stall ${index + 1}`,
+                price: STALL_PRICES[stall.size],
+                status: 'available'
+            }));
+
+
+            // Prepare full layout payload
+            const payload = {
+                exhibition_id: 1, // Hardcoded for now, can be dynamic
+                length: width,
+                width: height,
+                entry_point: entryPoints,
+                exit_point: exitPoints,
+                stalls: stalls,
+                layout_json: {
+                    dimensions: { width, height },
+                    elements: elements
+                },
+                grid_size: GRID_SIZE,
+                layout_scale: pixelsPerMeter
+            };
+
+            const saveBtn = document.getElementById('saveLayoutBtn');
+            const originalBtnText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.disabled = true;
+
+            fetch('customized_save_layout.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP ${res.status} - ${res.statusText}`);
+                    return res.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        alert('Layout and stalls saved successfully!');
+                    } else {
+                        throw new Error(data.message || 'Unknown error');
+                    }
+                })
+                .catch(err => {
+                    console.error('Save error:', err);
+                    alert('Failed to save layout: ' + err.message);
+                })
+                .finally(() => {
+                    saveBtn.innerHTML = originalBtnText;
+                    saveBtn.disabled = false;
+                });
+        }
+
+
+        // Function to save all stalls
+        function saveStalls(layoutId) {
+            if (!elements.stalls || elements.stalls.length === 0) {
+                return Promise.resolve();
+            }
+
+            // Create an array of promises for each stall save operation
+            const stallPromises = elements.stalls.map((stall, index) => {
+                const stallData = new FormData();
+                stallData.append('action', 'save_stall');
+                stallData.append('layout_id', layoutId);
+                stallData.append('size', stall.size);
+                stallData.append('stall_type', stall.name || `Stall ${index + 1}`);
+                stallData.append('price', '0'); // Default price
+                stallData.append('status', 'available'); // Default status
+
+                return fetch('customized_save_layout.php', {
+                    method: 'POST',
+                    body: stallData
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data.success) {
+                            throw new Error(data.message || 'Failed to save stall');
+                        }
+                        return data;
+                    });
+            });
+
+            // Return a promise that resolves when all stalls are saved
+            return Promise.all(stallPromises)
+                .then(results => {
+                    console.log(`All ${results.length} stalls saved successfully`);
+                });
+        }
+
+        // Initialize the application
+        function init() {
+            initEventListeners();
+            generateLayout();
+        }
+
+        // Start the application
+        init();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExpoMetrix - Stall Layout Generator</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .layout-container {
+            position: relative;
+            border: 2px solid #000;
+            margin: 20px auto;
+            background-color: #ADE8F4;
+            overflow: auto;
+        }
+        
+        .stall {
+            position: absolute;
+            background-color: white;
+            border: 2px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            overflow: hidden;
+            text-align: center;
+        }
+        
+        .small-stall {
+            background-color: #E6F7FF;
+        }
+        
+        .large-stall {
+            background-color: #FFFBEB;
+        }
+        
+        .staff-space {
+            position: absolute;
+            background-color: #ADE8F4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .walking-space {
+            position: absolute;
+            background-color: #CCFF33;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        .gate {
+            position: absolute;
+            background-color: #FF9999;
+            border: 2px solid #FF0000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            color: #800000;
+        }
+        
+        .modal-xl {
+            max-width: 90%;
+        }
+        
+        .layout-controls {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        #scaleFactor {
+            width: 100%;
+        }
+        
+        .scale-label {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #6c757d;
+        }
+
+        .info-section {
+            background-color: #e9ecef;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0077B6;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <div class="logo">ExpoMetrix</div>
+                <h1>Exhibition Stall Layout Generator</h1>
+                <p class="text-muted">Create professional exhibition layouts with automatic stall placement</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="layout-controls">
+                    <h4>Layout Settings</h4>
+                    <div class="mb-3">
+                        <label for="layoutWidth" class="form-label">Layout Width (meters)</label>
+                        <input type="number" class="form-control" id="layoutWidth" value="20" min="10" step="0.5">
+                    </div>
+                    <div class="mb-3">
+                        <label for="layoutHeight" class="form-label">Layout Height (meters)</label>
+                        <input type="number" class="form-control" id="layoutHeight" value="15" min="8" step="0.5">
+                    </div>
+                    
+                    <h5 class="mt-3">Stall Sizes</h5>
+                    <div class="mb-3">
+                        <label for="smallStallSize" class="form-label">Small Stalls Size (meters) - Border</label>
+                        <input type="number" class="form-control" id="smallStallSize" value="3" min="2" max="5" step="0.5">
+                    </div>
+                    <div class="mb-3">
+                        <label for="largeStallSize" class="form-label">Large Stalls Size (meters) - Center</label>
+                        <input type="number" class="form-control" id="largeStallSize" value="4" min="3" max="8" step="0.5">
+                    </div>
+                    
+                    <button id="generateLayout" class="btn btn-primary">Generate Layout</button>
+                    <!-- Add this button in your layout-controls div, after the Generate Layout button -->
+<button id="saveLayout" class="btn btn-success mt-3">Save Layout</button>
+                </div>
+                
+                <div class="layout-controls">
+                    <h4>Display Options</h4>
+                    <div class="mb-3">
+                        <label for="scaleFactor" class="form-label">Zoom Level</label>
+                        <input type="range" class="form-range" id="scaleFactor" min="25" max="100" value="50">
+                        <div class="d-flex justify-content-between scale-label">
+                            <span>25%</span>
+                            <span>50%</span>
+                            <span>75%</span>
+                            <span>100%</span>
+                        </div>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showLabels" checked>
+                        <label class="form-check-label" for="showLabels">Show Stall Labels</label>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="showDimensions" checked>
+                        <label class="form-check-label" for="showDimensions">Show Dimensions</label>
+                    </div>
+                </div>
+                
+                <div class="layout-controls">
+                    <h4>Layout Statistics</h4>
+                    <p><strong>Total Area:</strong> <span id="totalArea">0</span> m² (<span id="totalAreaFt">0</span> sq ft)</p>
+                    <p><strong>Number of Stalls:</strong> <span id="stallCount">0</span> (<span id="smallStallCount">0</span> small, <span id="largeStallCount">0</span> large)</p>
+                    <p><strong>Total Stall Area:</strong> <span id="stallArea">0</span> m² (<span id="stallAreaFt">0</span> sq ft)</p>
+                    <p><strong>Walking Area:</strong> <span id="walkingArea">0</span> m² (<span id="walkingAreaFt">0</span> sq ft)</p>
+                    <p><strong>Staff Area:</strong> <span id="staffArea">0</span> m² (<span id="staffAreaFt">0</span> sq ft)</p>
+                </div>
+
+                <div class="info-section">
+                    <h4>Layout Information</h4>
+                    <ul>
+                        <li>Small Stall Size: <span id="small-stall-size-info">3x3 meters</span> (border)</li>
+                        <li>Large Stall Size: <span id="large-stall-size-info">4x4 meters</span> (center)</li>
+                        <li>Staff Space: 80 cm</li>
+                        <li>Entry/Exit Width: 80 cm</li>
+                        <li>Walking Space: 80 cm</li>
+                        <li>Gap Between Stalls: 40 cm</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-md-8">
+                <div id="layoutContainer" class="layout-container">
+                    <!-- The layout will be generated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stall Rename Modal -->
+    <div class="modal fade" id="stallModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Stall</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="stallName" class="form-label">Stall Name</label>
+                        <input type="text" class="form-control" id="stallName">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveStallName">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Constants
+        const STAFF_SPACE = 0.8; // 80 cm
+        const GATE_WIDTH = 0.8; // 80 cm
+        const WALKING_SPACE = 0.8; // 80 cm
+        const STALL_GAP = 0.4; // 40 cm
+        const METERS_TO_FEET = 10.764; // Conversion factor
+        
+        // DOM Elements
+        const layoutContainer = document.getElementById('layoutContainer');
+        const layoutWidth = document.getElementById('layoutWidth');
+        const layoutHeight = document.getElementById('layoutHeight');
+        const smallStallSizeInput = document.getElementById('smallStallSize');
+        const largeStallSizeInput = document.getElementById('largeStallSize');
+        const generateButton = document.getElementById('generateLayout');
+        const scaleFactorInput = document.getElementById('scaleFactor');
+        const showLabelsCheckbox = document.getElementById('showLabels');
+        const showDimensionsCheckbox = document.getElementById('showDimensions');
+        const totalAreaSpan = document.getElementById('totalArea');
+        const totalAreaFtSpan = document.getElementById('totalAreaFt');
+        const stallCountSpan = document.getElementById('stallCount');
+        const smallStallCountSpan = document.getElementById('smallStallCount');
+        const largeStallCountSpan = document.getElementById('largeStallCount');
+        const stallAreaSpan = document.getElementById('stallArea');
+        const stallAreaFtSpan = document.getElementById('stallAreaFt');
+        const walkingAreaSpan = document.getElementById('walkingArea');
+        const walkingAreaFtSpan = document.getElementById('walkingAreaFt');
+        const staffAreaSpan = document.getElementById('staffArea');
+        const staffAreaFtSpan = document.getElementById('staffAreaFt');
+        const smallStallSizeInfo = document.getElementById('small-stall-size-info');
+        const largeStallSizeInfo = document.getElementById('large-stall-size-info');
+        
+        // Modal elements
+        const stallModal = new bootstrap.Modal(document.getElementById('stallModal'));
+        const stallNameInput = document.getElementById('stallName');
+        const saveStallNameButton = document.getElementById('saveStallName');
+        
+        let currentStall = null;
+        let stallsData = [];
+        let smallStallsCount = 0;
+        let largeStallsCount = 0;
+        let pixelsPerMeter = 50; // Initial scale
+        
+        // Event Listeners
+        generateButton.addEventListener('click', generateLayout);
+        scaleFactorInput.addEventListener('input', updateScale);
+        showLabelsCheckbox.addEventListener('change', updateDisplayOptions);
+        showDimensionsCheckbox.addEventListener('change', updateDisplayOptions);
+        saveStallNameButton.addEventListener('click', saveStallName);
+        
+        // Initialize
+        generateLayout();
+        
+        function generateLayout() {
+            // Clear previous layout
+            layoutContainer.innerHTML = '';
+            stallsData = [];
+            smallStallsCount = 0;
+            largeStallsCount = 0;
+            
+            // Get user input
+            const width = parseFloat(layoutWidth.value);
+            const height = parseFloat(layoutHeight.value);
+            const smallStallSize = parseFloat(smallStallSizeInput.value);
+            const largeStallSize = parseFloat(largeStallSizeInput.value);
+            
+            if (isNaN(width) || isNaN(height) || width < 10 || height < 8) {
+                alert('Please enter valid dimensions (minimum width: 10m, minimum height: 8m)');
+                return;
+            }
+            
+            if (isNaN(smallStallSize) || isNaN(largeStallSize) || 
+                smallStallSize < 2 || largeStallSize < 3 || 
+                smallStallSize > largeStallSize) {
+                alert('Please enter valid stall sizes. Large stall size must be greater than small stall size.');
+                return;
+            }
+            
+            // Update stall size info
+            smallStallSizeInfo.textContent = `${smallStallSize}x${smallStallSize} meters`;
+            largeStallSizeInfo.textContent = `${largeStallSize}x${largeStallSize} meters`;
+            
+            // Set container size
+            layoutContainer.style.width = `${width * pixelsPerMeter}px`;
+            layoutContainer.style.height = `${height * pixelsPerMeter}px`;
+            
+            // Create layout
+            createLayout(width, height, smallStallSize, largeStallSize);
+            
+            // Update stats
+            updateStatistics(width, height, smallStallSize, largeStallSize);
+            
+            // Update display options
+            updateDisplayOptions();
+        }
+        
+        function createLayout(width, height, smallStallSize, largeStallSize) {
+            // Calculate available space
+            const innerWidth = width - (2 * STAFF_SPACE);
+            const innerHeight = height - (2 * STAFF_SPACE);
+            
+            // Create outer staff space areas
+            createStaffSpaces(width, height);
+            
+            // Create entry and exit gates
+            createGates(width, height);
+            
+            // Create outer perimeter stalls (small size)
+            createOuterStalls(width, height, smallStallSize);
+            
+            // Create inner area and stalls (large size)
+            createInnerArea(width, height, smallStallSize, largeStallSize);
+        }
+        
+        function createStaffSpaces(width, height) {
+            // Top staff space
+            createElement('staff-space', {
+                left: 0,
+                top: 0,
+                width: width,
+                height: STAFF_SPACE
+            }, 'Space for stall staff');
+            
+            // Bottom staff space
+            createElement('staff-space', {
+                left: 0,
+                top: height - STAFF_SPACE,
+                width: width,
+                height: STAFF_SPACE
+            }, 'Space for stall staff');
+            
+            // Left staff space
+            createElement('staff-space', {
+                left: 0,
+                top: STAFF_SPACE,
+                width: STAFF_SPACE,
+                height: height - (2 * STAFF_SPACE)
+            }, 'Space for stall staff');
+            
+            // Right staff space
+            createElement('staff-space', {
+                left: width - STAFF_SPACE,
+                top: STAFF_SPACE,
+                width: STAFF_SPACE,
+                height: height - (2 * STAFF_SPACE)
+            }, 'Space for stall staff');
+        }
+        
+        function createGates(width, height) {
+            // Entry gate (top right)
+            createGate({
+                left: width - STAFF_SPACE - GATE_WIDTH - smallStallSizeInput.value,
+                top: 0,
+                width: GATE_WIDTH,
+                height: STAFF_SPACE
+            }, 'ENTRY');
+            
+            // Exit gate (bottom right)
+            createGate({
+                left: width - STAFF_SPACE - GATE_WIDTH - smallStallSizeInput.value,
+                top: height - STAFF_SPACE,
+                width: GATE_WIDTH,
+                height: STAFF_SPACE
+            }, 'EXIT');
+        }
+        
+        function createGate(position, label) {
+            const gate = document.createElement('div');
+            gate.className = 'gate';
+            gate.style.left = `${position.left * pixelsPerMeter}px`;
+            gate.style.top = `${position.top * pixelsPerMeter}px`;
+            gate.style.width = `${position.width * pixelsPerMeter}px`;
+            gate.style.height = `${position.height * pixelsPerMeter}px`;
+            gate.textContent = label;
+            
+            layoutContainer.appendChild(gate);
+            return gate;
+        }
+        
+        function createOuterStalls(width, height, stallSize) {
+            // Available space after excluding gates and corners
+            const availableTopWidth = width - 2 * STAFF_SPACE - GATE_WIDTH - (2 * stallSize);
+            const availableBottomWidth = width - 2 * STAFF_SPACE - GATE_WIDTH - (2 * stallSize);
+            const availableHeight = height - 2 * STAFF_SPACE - (2 * stallSize);
+            
+            // Calculate how many full stalls can fit
+            const topStallsCount = Math.max(0, Math.floor((availableTopWidth - STALL_GAP) / (stallSize + STALL_GAP)));
+            const bottomStallsCount = Math.max(0, Math.floor((availableBottomWidth - STALL_GAP) / (stallSize + STALL_GAP)));
+            const leftStallsCount = Math.max(0, Math.floor((availableHeight - STALL_GAP) / (stallSize + STALL_GAP)));
+            const rightStallsCount = Math.max(0, Math.floor((availableHeight - STALL_GAP) / (stallSize + STALL_GAP)));
+            
+            // Create top stalls (avoiding corners and entry gate)
+            const topStallStartX = STAFF_SPACE + stallSize;
+            
+            // Calculate spacing to distribute stalls evenly
+            let topGap = STALL_GAP;
+            if (topStallsCount > 0) {
+                const totalStallWidth = topStallsCount * stallSize;
+                const totalGapWidth = (topStallsCount + 1) * STALL_GAP;
+                
+                if (totalStallWidth + totalGapWidth <= availableTopWidth) {
+                    // We can fit with minimum gaps
+                    topGap = (availableTopWidth - totalStallWidth) / (topStallsCount + 1);
+                }
+            }
+            
+            let topX = topStallStartX + topGap;
+            for (let i = 0; i < topStallsCount; i++) {
+                createStall({
+                    left: topX,
+                    top: STAFF_SPACE,
+                    width: stallSize,
+                    height: stallSize
+                }, `T${i+1}`, true);
+                
+                topX += stallSize + topGap;
+            }
+            
+            // Create bottom stalls (avoiding corners and exit gate)
+            const bottomStallStartX = STAFF_SPACE + stallSize;
+            
+            // Calculate spacing to distribute stalls evenly
+            let bottomGap = STALL_GAP;
+            if (bottomStallsCount > 0) {
+                const totalStallWidth = bottomStallsCount * stallSize;
+                const totalGapWidth = (bottomStallsCount + 1) * STALL_GAP;
+                
+                if (totalStallWidth + totalGapWidth <= availableBottomWidth) {
+                    // We can fit with minimum gaps
+                    bottomGap = (availableBottomWidth - totalStallWidth) / (bottomStallsCount + 1);
+                }
+            }
+            
+            let bottomX = bottomStallStartX + bottomGap;
+            for (let i = 0; i < bottomStallsCount; i++) {
+                createStall({
+                    left: bottomX,
+                    top: height - STAFF_SPACE - stallSize,
+                    width: stallSize,
+                    height: stallSize
+                }, `B${i+1}`, true);
+                
+                bottomX += stallSize + bottomGap;
+            }
+            
+            // Create left stalls (avoiding corners)
+            const leftStallStartY = STAFF_SPACE + stallSize;
+            
+            // Calculate spacing to distribute stalls evenly
+            let leftGap = STALL_GAP;
+            if (leftStallsCount > 0) {
+                const totalStallHeight = leftStallsCount * stallSize;
+                const totalGapHeight = (leftStallsCount + 1) * STALL_GAP;
+                
+                if (totalStallHeight + totalGapHeight <= availableHeight) {
+                    // We can fit with minimum gaps
+                    leftGap = (availableHeight - totalStallHeight) / (leftStallsCount + 1);
+                }
+            }
+            
+            let leftY = leftStallStartY + leftGap;
+            for (let i = 0; i < leftStallsCount; i++) {
+                createStall({
+                    left: STAFF_SPACE,
+                    top: leftY,
+                    width: stallSize,
+                    height: stallSize
+                }, `L${i+1}`, true);
+                
+                leftY += stallSize + leftGap;
+            }
+            
+            // Create right stalls (avoiding corners)
+            const rightStallStartY = STAFF_SPACE + stallSize;
+            
+            // Calculate spacing to distribute stalls evenly
+            let rightGap = STALL_GAP;
+            if (rightStallsCount > 0) {
+                const totalStallHeight = rightStallsCount * stallSize;
+                const totalGapHeight = (rightStallsCount + 1) * STALL_GAP;
+                
+                if (totalStallHeight + totalGapHeight <= availableHeight) {
+                    // We can fit with minimum gaps
+                    rightGap = (availableHeight - totalStallHeight) / (rightStallsCount + 1);
+                }
+            }
+            
+            let rightY = rightStallStartY + rightGap;
+            for (let i = 0; i < rightStallsCount; i++) {
+                createStall({
+                    left: width - STAFF_SPACE - stallSize,
+                    top: rightY,
+                    width: stallSize,
+                    height: stallSize
+                }, `R${i+1}`, true);
+                
+                rightY += stallSize + rightGap;
+            }
+            
+            // Create corner stalls
+            // Top-left corner
+            createStall({
+                left: STAFF_SPACE,
+                top: STAFF_SPACE,
+                width: stallSize,
+                height: stallSize
+            }, `TL`, true);
+            
+            // Top-right corner (if not interfering with entry gate)
+            if (width - STAFF_SPACE - stallSize - GATE_WIDTH > STAFF_SPACE + stallSize) {
+                createStall({
+                    left: width - STAFF_SPACE - stallSize,
+                    top: STAFF_SPACE,
+                    width: stallSize,
+                    height: stallSize
+                }, `TR`, true);
+            }
+            
+            // Bottom-left corner
+            createStall({
+                left: STAFF_SPACE,
+                top: height - STAFF_SPACE - stallSize,
+                width: stallSize,
+                height: stallSize
+            }, `BL`, true);
+            
+            // Bottom-right corner (if not interfering with exit gate)
+            if (width - STAFF_SPACE - stallSize - GATE_WIDTH > STAFF_SPACE + stallSize) {
+                createStall({
+                    left: width - STAFF_SPACE - stallSize,
+                    top: height - STAFF_SPACE - stallSize,
+                    width: stallSize,
+                    height: stallSize
+                }, `BR`, true);
+            }
+        }
+        
+        function createInnerArea(width, height, smallStallSize, largeStallSize) {
+            // Calculate inner area dimensions
+            const innerLeft = STAFF_SPACE + smallStallSize + WALKING_SPACE;
+            const innerTop = STAFF_SPACE + smallStallSize + WALKING_SPACE;
+            const innerWidth = width - 2 * (STAFF_SPACE + smallStallSize + WALKING_SPACE);
+            const innerHeight = height - 2 * (STAFF_SPACE + smallStallSize + WALKING_SPACE);
+            
+            // Skip if inner area is too small
+            if (innerWidth < largeStallSize || innerHeight < largeStallSize) {
+                return;
+            }
+            
+            // Create surrounding walking space
+            createElement('walking-space', {
+                left: STAFF_SPACE + smallStallSize,
+                top: STAFF_SPACE + smallStallSize,
+                width: innerWidth + 2 * WALKING_SPACE,
+                height: innerHeight + 2 * WALKING_SPACE
+            }, 'Space for people to walk');
+            
+            // Calculate how many rows and columns can fit in inner area
+            const maxRows = Math.max(1, Math.floor((innerHeight + STALL_GAP) / (largeStallSize + STALL_GAP)));
+            const maxCols = Math.max(1, Math.floor((innerWidth + STALL_GAP) / (largeStallSize + STALL_GAP)));
+            
+            // Skip if we can't fit stalls
+            if (maxRows < 1 || maxCols < 1) return;
+            
+            // Calculate spacing to distribute stalls evenly
+            const colGap = (innerWidth - (maxCols * largeStallSize)) / (maxCols + 1);
+            
+            // If we have more than 2 rows, we need walking paths between rows
+            if (maxRows > 2) {
+                // Distribute stalls in groups with walking paths between them
+                const rowsPerGroup = 2;
+                const groupCount = Math.ceil(maxRows / rowsPerGroup);
+                const availableHeight = innerHeight - ((groupCount - 1) * WALKING_SPACE);
+                const rowsToDistribute = Math.min(maxRows, groupCount * rowsPerGroup);
+                const rowHeight = largeStallSize + STALL_GAP;
+                const totalRowHeight = rowsToDistribute * rowHeight - STALL_GAP;
+                const extraSpace = availableHeight - totalRowHeight;
+                const verticalPadding = extraSpace / 2;
+                
+                for (let group = 0; group < groupCount; group++) {
+                    const groupStartRow = group * rowsPerGroup;
+                    const groupRowCount = Math.min(rowsPerGroup, maxRows - groupStartRow);
+                    
+                    // Group's vertical position
+                    const groupTop = innerTop + verticalPadding + group * ((rowsPerGroup * rowHeight) + WALKING_SPACE - STALL_GAP);
+                    
+                    // Create walking path before this group (except first group)
+                    if (group > 0) {
+                        createElement('walking-space', {
+                            left: innerLeft - WALKING_SPACE,
+                            top: groupTop - WALKING_SPACE,
+                            width: innerWidth + 2 * WALKING_SPACE,
+                            height: WALKING_SPACE
+                        }, 'Walking path between stall rows');
+                    }
+                    
+                    // Create stalls for this group
+                    for (let r = 0; r < groupRowCount; r++) {
+                        const rowTop = groupTop + r * rowHeight;
+                        
+                        // Create staff space for this row
+                        createElement('staff-space', {
+                            left: innerLeft,
+                            top: rowTop + largeStallSize,
+                            width: innerWidth,
+                            height: STALL_GAP
+                        }, 'Space for staff');
+                        
+                        // Create stalls for this row
+                        for (let c = 0; c < maxCols; c++) {
+                            const stallLeft = innerLeft + colGap + c * (largeStallSize + colGap);
+                            createStall({
+                                left: stallLeft,
+                                top: rowTop,
+                                width: largeStallSize,
+                                height: largeStallSize
+                            }, `M${group * rowsPerGroup + r + 1}-${c+1}`, false);
+                        }
+                    }
+                }
+            } else {
+                // Simple case: Just distribute the rows evenly
+                const rowGap = (innerHeight - (maxRows * largeStallSize)) / (maxRows + 1);
+                
+                for (let r = 0; r < maxRows; r++) {
+                    const rowTop = innerTop + rowGap + r * (largeStallSize + rowGap);
+                    
+                    // Create staff space after this row (except last row)
+                    if (r < maxRows - 1) {
+                        createElement('staff-space', {
+                            left: innerLeft,
+                            top: rowTop + largeStallSize,
+                            width: innerWidth,
+                            height: STALL_GAP
+                        }, 'Space for staff');
+                    }
+                    
+                    // Create stalls for this row
+                    for (let c = 0; c < maxCols; c++) {
+                        const stallLeft = innerLeft + colGap + c * (largeStallSize + colGap);
+                        createStall({
+                            left: stallLeft,
+                            top: rowTop,
+                            width: largeStallSize,
+                            height: largeStallSize
+                        }, `M${r+1}-${c+1}`, false);
+                    }
+                }
+            }
+        }
+
+        function createStall(position, defaultName, isSmall) {
+            const stall = document.createElement('div');
+            stall.className = 'stall';
+            
+            if (isSmall) {
+                stall.classList.add('small-stall');
+                smallStallsCount++;
+            } else {
+                stall.classList.add('large-stall');
+                largeStallsCount++;
+            }
+            
+            stall.style.left = `${position.left * pixelsPerMeter}px`;
+            stall.style.top = `${position.top * pixelsPerMeter}px`;
+            stall.style.width = `${position.width * pixelsPerMeter}px`;
+            stall.style.height = `${position.height * pixelsPerMeter}px`;
+            
+            const stallData = {
+                id: 'stall-' + stallsData.length,
+                name: `Stall ${defaultName}`,
+                position: position,
+                isSmall: isSmall
+            };
+            
+            stall.id = stallData.id;
+            stall.innerHTML = stallData.name + `<br>(${position.width}x${position.height} Meter)`;
+            
+            stall.addEventListener('click', () => openStallModal(stallData));
+            
+            stallsData.push(stallData);
+            layoutContainer.appendChild(stall);
+            return stall;
+        }
+        
+        function createElement(className, position, title) {
+            const element = document.createElement('div');
+            element.className = className;
+            element.style.left = `${position.left * pixelsPerMeter}px`;
+            element.style.top = `${position.top * pixelsPerMeter}px`;
+            element.style.width = `${position.width * pixelsPerMeter}px`;
+            element.style.height = `${position.height * pixelsPerMeter}px`;
+            element.title = title;
+            
+            layoutContainer.appendChild(element);
+            return element;
+        }
+        
+        function updateScale() {
+            const scaleFactor = parseInt(scaleFactorInput.value);
+            pixelsPerMeter = scaleFactor;
+            
+            // Update layout
+            generateLayout();
+        }
+        
+        function updateDisplayOptions() {
+            const showLabels = showLabelsCheckbox.checked;
+            const showDimensions = showDimensionsCheckbox.checked;
+            
+            document.querySelectorAll('.stall').forEach(stall => {
+                const stallData = stallsData.find(s => s.id === stall.id);
+                if (stallData) {
+                    if (showLabels && showDimensions) {
+                        stall.innerHTML = `${stallData.name}<br>(${stallData.position.width}x${stallData.position.height} Meter)`;
+                    } else if (showLabels) {
+                        stall.innerHTML = stallData.name;
+                    } else if (showDimensions) {
+                        stall.innerHTML = `(${stallData.position.width}x${stallData.position.height} Meter)`;
+                    } else {
+                        stall.innerHTML = '';
+                    }
+                }
+            });
+        }
+        
+        function updateStatistics(width, height, smallStallSize, largeStallSize) {
+            // Calculate and update statistics
+            const totalArea = width * height;
+            totalAreaSpan.textContent = totalArea.toFixed(2);
+            totalAreaFtSpan.textContent = (totalArea * METERS_TO_FEET).toFixed(2);
+            
+            const smallStallArea = smallStallsCount * (smallStallSize * smallStallSize);
+            const largeStallArea = largeStallsCount * (largeStallSize * largeStallSize);
+            const totalStallArea = smallStallArea + largeStallArea;
+            
+            stallCountSpan.textContent = smallStallsCount + largeStallsCount;
+            smallStallCountSpan.textContent = smallStallsCount;
+            largeStallCountSpan.textContent = largeStallsCount;
+            stallAreaSpan.textContent = totalStallArea.toFixed(2);
+            stallAreaFtSpan.textContent = (totalStallArea * METERS_TO_FEET).toFixed(2);
+            
+            // Calculate staff areas (perimeter + gaps between stalls)
+            const perimeterStaffArea = 
+                (2 * width * STAFF_SPACE) + // Top and bottom
+                (2 * (height - 2 * STAFF_SPACE) * STAFF_SPACE); // Left and right
+            
+            // Estimate staff area between stalls (this is approximate)
+            const stallGapsArea = (smallStallsCount + largeStallsCount) * STALL_GAP * 2;
+            const totalStaffArea = perimeterStaffArea + stallGapsArea;
+            
+            staffAreaSpan.textContent = totalStaffArea.toFixed(2);
+            staffAreaFtSpan.textContent = (totalStaffArea * METERS_TO_FEET).toFixed(2);
+            
+            // Calculate walking space (total area minus stalls and staff areas)
+            const walkingArea = totalArea - totalStallArea - totalStaffArea;
+            walkingAreaSpan.textContent = walkingArea.toFixed(2);
+            walkingAreaFtSpan.textContent = (walkingArea * METERS_TO_FEET).toFixed(2);
+        }
+        
+        function openStallModal(stallData) {
+            currentStall = stallData;
+            stallNameInput.value = stallData.name;
+            stallModal.show();
+        }
+        
+        function saveStallName() {
+            if (currentStall && stallNameInput.value.trim()) {
+                currentStall.name = stallNameInput.value.trim();
+                
+                // Update stall display
+                const stallElement = document.getElementById(currentStall.id);
+                if (stallElement) {
+                    const showLabels = showLabelsCheckbox.checked;
+                    const showDimensions = showDimensionsCheckbox.checked;
+                    
+                    if (showLabels && showDimensions) {
+                        stallElement.innerHTML = `${currentStall.name}<br>(${currentStall.position.width}x${currentStall.position.height} Meter)`;
+                    } else if (showLabels) {
+                        stallElement.innerHTML = currentStall.name;
+                    } else if (showDimensions) {
+                        stallElement.innerHTML = `(${currentStall.position.width}x${currentStall.position.height} Meter)`;
+                    }
+                }
+                
+                stallModal.hide();
+            }
+        }
+        
+        // Add export functionality (could be expanded)
+        function exportLayout() {
+            // Create exportable data
+            const layoutData = {
+                dimensions: {
+                    width: parseFloat(layoutWidth.value),
+                    height: parseFloat(layoutHeight.value)
+                },
+                stallSizes: {
+                    small: parseFloat(smallStallSizeInput.value),
+                    large: parseFloat(largeStallSizeInput.value)
+                },
+                stalls: stallsData
+            };
+            
+            // Create and download the JSON file
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(layoutData, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "exhibition-layout.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        function extractLayoutData() {
+    // Get layout dimensions and settings
+    const layoutWidth = parseFloat(document.getElementById('layoutWidth').value);
+    const layoutHeight = parseFloat(document.getElementById('layoutHeight').value);
+    const smallStallSize = parseFloat(document.getElementById('smallStallSize').value);
+    const largeStallSize = parseFloat(document.getElementById('largeStallSize').value);
+    const scaleFactor = parseInt(document.getElementById('scaleFactor').value);
+    
+     // Get actual gate positions from the layout
+     const gates = Array.from(document.querySelectorAll('.gate'));
+    const entryGate = gates.find(gate => gate.textContent.includes('ENTRY') || gate.textContent.includes('ENTRY'));
+    const exitGate = gates.find(gate => gate.textContent.includes('EXIT'));
+    
+    // Calculate entry and exit points based on actual gate positions
+    const entryPoint = {
+        x: entryGate ? parseFloat(entryGate.style.left) / pixelsPerMeter : width - STAFF_SPACE - GATE_WIDTH - smallStallSizeInput.value,
+        y: entryGate ? parseFloat(entryGate.style.top) / pixelsPerMeter : 0,
+        width: GATE_WIDTH,
+        height: STAFF_SPACE
+    };
+    
+    const exitPoint = {
+        x: exitGate ? parseFloat(exitGate.style.left) / pixelsPerMeter : width - STAFF_SPACE - GATE_WIDTH - smallStallSizeInput.value,
+        y: exitGate ? parseFloat(exitGate.style.top) / pixelsPerMeter : height - STAFF_SPACE,
+        width: GATE_WIDTH,
+        height: STAFF_SPACE
+    };
+    
+    // Prepare the full JSON layout data
+    const layoutJson = {
+        dimensions: {
+            width: layoutWidth,
+            height: layoutHeight,
+            area: layoutWidth * layoutHeight,
+            scaleFactor: scaleFactor,
+            pixelsPerMeter: scaleFactor
+        },
+        settings: {
+            smallStallSize: smallStallSize,
+            largeStallSize: largeStallSize,
+            staffSpace: 0.8, // STAFF_SPACE constant
+            gateWidth: 0.8,  // GATE_WIDTH constant
+            walkingSpace: 0.8, // WALKING_SPACE constant
+            stallGap: 0.4 // STALL_GAP constant
+        },
+        entryPoint: entryPoint,
+        exitPoint: exitPoint,
+        stalls: stallsData.map(stall => ({
+            id: stall.id,
+            name: stall.name,
+            position: stall.position,
+            isSmall: stall.isSmall,
+            size: stall.isSmall ? smallStallSize : largeStallSize,
+            type: stall.isSmall ? "border" : "center"
+        })),
+        statistics: {
+            totalStalls: smallStallsCount + largeStallsCount,
+            smallStallsCount: smallStallsCount,
+            largeStallsCount: largeStallsCount,
+            totalStallArea: (smallStallsCount * smallStallSize * smallStallSize) + 
+                           (largeStallsCount * largeStallSize * largeStallSize),
+            walkingArea: (layoutWidth * layoutHeight) - 
+                        ((smallStallsCount * smallStallSize * smallStallSize) + 
+                        (largeStallsCount * largeStallSize * largeStallSize)) -
+                        ((2 * layoutWidth * 0.8) + (2 * (layoutHeight - 2 * 0.8) * 0.8)) // Staff area
+        }
+    };
+    
+    // Prepare data for SQL insertion
+    const layoutTableData = {
+        Layout_id: null, // This would be auto-incremented in the database
+        Exhibition_id: null, // You would set this based on your application context
+        Length: layoutHeight,
+        Width: layoutWidth,
+        Area: layoutWidth * layoutHeight,
+        Entry_point: JSON.stringify(entryPoint),
+        Exit_point: JSON.stringify(exitPoint)
+    };
+    
+    const stallsTableData = stallsData.map((stall, index) => ({
+        Stall_id: null, // This would be auto-incremented in the database
+        Layout_id: null, // This would reference the Layout_id after insertion
+        Size: stall.isSmall ? `${smallStallSize}x${smallStallSize}` : `${largeStallSize}x${largeStallSize}`,
+        Stall_type: stall.isSmall ? "border" : "center",
+        Price: 0, // You would set this based on your pricing logic
+        Status: "available", // Default status
+        layout_json: JSON.stringify(layoutJson),
+        grid_size: stall.isSmall ? smallStallSize : largeStallSize,
+        layout_scale: scaleFactor
+    }));
+    
+    return {
+        layoutTableData: layoutTableData,
+        stallsTableData: stallsTableData,
+        fullLayoutJson: layoutJson
+    };
+}
+
+// Example usage:
+// const extractedData = extractLayoutData();
+// console.log(extractedData);
+        
+        // This function could be added to import saved layouts
+        function importLayout(layoutData) {
+            if (!layoutData || !layoutData.dimensions || !layoutData.stallSizes || !Array.isArray(layoutData.stalls)) {
+                alert('Invalid layout data format');
+                return;
+            }
+            
+            // Set dimensions
+            layoutWidth.value = layoutData.dimensions.width;
+            layoutHeight.value = layoutData.dimensions.height;
+            
+            // Set stall sizes
+            smallStallSizeInput.value = layoutData.stallSizes.small;
+            largeStallSizeInput.value = layoutData.stallSizes.large;
+            
+            // Generate the layout
+            generateLayout();
+            
+            // Update stall names if available
+            layoutData.stalls.forEach(savedStall => {
+                const matchingStall = stallsData.find(s => 
+                    s.position.left === savedStall.position.left && 
+                    s.position.top === savedStall.position.top &&
+                    s.position.width === savedStall.position.width &&
+                    s.position.height === savedStall.position.height
+                );
+                
+                if (matchingStall) {
+                    matchingStall.name = savedStall.name;
+                    
+                    // Update display
+                    const stallElement = document.getElementById(matchingStall.id);
+                    if (stallElement) {
+                        stallElement.innerHTML = `${matchingStall.name}<br>(${matchingStall.position.width}x${matchingStall.position.height} Meter)`;
+                    }
+                }
+            });
+            
+            // Update display options
+            updateDisplayOptions();
+        }
+
+        // Add this to your existing JavaScript
+document.getElementById('saveLayout').addEventListener('click', saveLayoutToDatabase);
+
+function saveLayoutToDatabase() {
+    const extractedData = extractLayoutData();
+    
+    // Show loading state
+    const saveBtn = document.getElementById('saveLayout');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...';
+    saveBtn.disabled = true;
+    
+    // Send data to PHP backend
+    fetch('automatic_save_layout.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(extractedData.fullLayoutJson)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Layout saved successfully!');
+            // You could redirect or update UI here
+        } else {
+            alert('Error saving layout: ' + data.message);
+        }
+    })
+    .catch((error) => {
+        alert('Error: ' + error);
+    })
+    .finally(() => {
+        // Restore button state
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
+    </script>
+</body>
+</html>
